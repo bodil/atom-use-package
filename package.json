@@ -1,0 +1,19 @@
+{
+  "name": "atom-use-package",
+  "version": "1.0.0",
+  "description": "Programmatic package configuration for Atom",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bodil/atom-use-package.git"
+  },
+  "keywords": [
+    "atom"
+  ],
+  "author": "Bodil Stokke",
+  "license": "LGPL-3.0+",
+  "bugs": {
+    "url": "https://github.com/bodil/atom-use-package/issues"
+  },
+  "homepage": "https://github.com/bodil/atom-use-package#readme"
+}
