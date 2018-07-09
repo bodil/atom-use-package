@@ -1,10 +1,10 @@
 "use babel";
 
-import {BufferedProcess} from "atom";
+import { BufferedProcess } from "atom";
 
-export function configSet(scope, opts) {
+export function configSet(context, opts, config) {
   for (const key of Object.keys(opts)) {
-    atom.config.set(`${scope}.${key}`, opts[key]);
+    atom.config.set(`${context}.${key}`, opts[key], config);
   }
 }
 
@@ -32,7 +32,7 @@ export function usePackage(name, opts = {}) {
         const o = {};
         for (const key of Object.keys(m)) {
           let cmd = m[key];
-          if (cmd.indexOf(":") < 0) {
+          if (cmd.indexOf(":") < 0 && !cmd.endsWith("!")) {
             cmd = `${name}:${cmd}`;
           }
           o[key] = cmd;
@@ -51,20 +51,21 @@ export function usePackage(name, opts = {}) {
 
 function apm(args) {
   return new Promise(resolve => {
-    const output = [], error = [];
+    const output = [],
+      error = [];
     new BufferedProcess({
       command: atom.packages.getApmPath(),
       args,
       stdout: lines => output.push(lines),
       stderr: lines => error.push(lines),
       exit: code =>
-        resolve({code, stdout: output.join("\n"), stderr: error.join("\n")})
+        resolve({ code, stdout: output.join("\n"), stderr: error.join("\n") })
     });
   });
 }
 
 function apmLoad(name) {
-  return apm(["view", name, "--json"]).then(({code, stdout, stderr}) => {
+  return apm(["view", name, "--json"]).then(({ code, stdout, stderr }) => {
     if (code === 0) {
       return JSON.parse(stdout);
     }
@@ -75,7 +76,7 @@ function apmLoad(name) {
   });
 }
 
-function apmInstall({name, version, theme, apmInstallSource}) {
+function apmInstall({ name, version, theme, apmInstallSource }) {
   const activateOnSuccess = !theme && !atom.packages.isPackageDisabled(name);
   const activateOnFailure = atom.packages.isPackageActive(name);
   if (atom.packages.isPackageActive(name)) {
@@ -88,7 +89,7 @@ function apmInstall({name, version, theme, apmInstallSource}) {
   const packageRef = apmInstallSource
     ? apmInstallSource.source
     : `${name}@${version}`;
-  return apm(["install", packageRef]).then(({code, stdout, stderr}) => {
+  return apm(["install", packageRef]).then(({ code, stdout, stderr }) => {
     if (code === 0) {
       if (activateOnSuccess) {
         atom.packages.activatePackage(name);
@@ -126,15 +127,12 @@ function install(name) {
 function addToQueue(name) {
   return new Promise((resolve, reject) => {
     queue.scheduled += 1;
-    queue.items.push({name, resolve, reject});
-    setTimeout(
-      () => {
-        if (queue.idle) {
-          processQueue();
-        }
-      },
-      0
-    );
+    queue.items.push({ name, resolve, reject });
+    setTimeout(() => {
+      if (queue.idle) {
+        processQueue();
+      }
+    }, 0);
   });
 }
 
@@ -160,8 +158,9 @@ function processQueue() {
     if (queue.scheduled > 0) {
       if (queue.failed > 0) {
         done(
-          `Installed ${queue.scheduled -
-            queue.failed} packages, ${queue.failed} failed.`
+          `Installed ${queue.scheduled - queue.failed} packages, ${
+            queue.failed
+          } failed.`
         );
       } else {
         done(`Installed ${queue.scheduled} packages.`);
@@ -192,10 +191,13 @@ function processQueue() {
 
 function installPackage(name) {
   return apmLoad(name)
-    .then(pkg => apmInstall(pkg), err => {
-      atom.notifications.addError(`Unknown package '${name}'`);
-      throw err;
-    })
+    .then(
+      pkg => apmInstall(pkg),
+      err => {
+        atom.notifications.addError(`Unknown package '${name}'`);
+        throw err;
+      }
+    )
     .catch(err => {
       atom.notifications.addError(`Failed to install '${name}'`);
       throw err;
